@@ -1,65 +1,135 @@
-# Universal ROS2 Live Recording Status Dashboard
+# ROS2 Bags Recorder – Live Status Dashboard
 
-A complete implementation of an offline-first, enterprise-grade ROS2 recording and monitoring system.
+A reference implementation of an offline-first ROS2 recording, edge sync, and live monitoring stack.
 
 ## Overview
+This repository contains three services and a small library:
+- Recorder (Python/rclpy): Discovers topics, buffers and segments data, emits telemetry, and manages recovery.
+- Edge Server (FastAPI): Accepts segments, indexes sessions, exposes metrics and WebSocket events, and manages an upload queue.
+- Sync Engine (Python library): Chunked, resumable uploads with basic de-duplication and conflict handling.
+- Dashboard (React + Vite): Live status UI for sessions, metrics, alerts, and logs.
 
-This system provides:
-- Automatic ROS2 topic discovery and configuration
-- Robust recording and incremental session handling
-- Real-time live recording status dashboard
-- Transactional, resumable uploads between edge and cloud
+## Repository structure
+```
+.
+├─ recorder/
+│  ├─ src/
+│  │  ├─ buffer.py
+│  │  ├─ config.py
+│  │  ├─ discovery.py
+│  │  ├─ manifest.py
+│  │  ├─ node.py
+│  │  ├─ storage.py
+│  │  ├─ telemetry.py
+│  │  └─ recovery.py
+│  └─ requirements.txt
+├─ edge_server/
+│  ├─ src/
+│  │  ├─ config.py
+│  │  ├─ index.py
+│  │  ├─ metrics.py
+│  │  ├─ queue.py
+│  │  ├─ server.py
+│  │  ├─ storage.py
+│  │  └─ websocket.py
+│  │  └─ sync.py
+│  └─ requirements.txt
+├─ sync_engine/
+│  └─ src/
+│     ├─ engine.py
+│     ├─ uploader.py
+│     ├─ deduplication.py
+│     ├─ conflict.py
+│     └─ recovery.py
+├─ dashboard/
+│  ├─ package.json
+│  ├─ tsconfig.json
+│  ├─ src/
+│  │  ├─ App.tsx
+│  │  └─ main.tsx
+│  ├─ public/
+│  │  └─ index.html
+│  └─ nginx.conf
+├─ config/
+│  ├─ recorder_config.yaml
+│  ├─ edge_server_config.yaml
+│  └─ dashboard_config.yaml
+├─ Dockerfile.recorder
+├─ Dockerfile.edge_server
+├─ Dockerfile.dashboard
+├─ docker-compose.yml
+├─ .env.example
+└─ .gitignore
+```
 
-## Features
+## Exposed ports
+- Dashboard (Nginx): 3000/tcp (container 80)
+- Edge Server HTTP (FastAPI): 8080/tcp
+- Edge Server WebSocket: 8765/tcp
+- Edge Server metrics (Prometheus): 9091/tcp
+- Recorder metrics: 9090/tcp (recorder runs with network_mode: host)
 
-- **Offline-First**: Recording and local storage work without network
-- **Zero Data Loss**: Atomic writes, checksumming, and transactional commit/rollback
-- **Universal ROS2 Compatibility**: Works with any ROS2 distro and DDS implementation
-- **Real-Time Dashboard**: Live metrics, progress bars, alerts, and logs
-- **Resumable Uploads**: Chunked uploads with precise resume capability
-- **Security**: Encryption at rest and in transit
-- **Observability**: Rich metrics and audit trails
+## Prerequisites
+- Docker and Docker Compose
+- Linux host recommended (recorder uses `network_mode: host`)
+- ROS2 (on the host) for live topic discovery if you plan to integrate the recorder with a running ROS2 graph
 
-## Requirements
-
-- Docker & Docker Compose
-- ROS2 (Foxy/Galactic/Humble/Iron)
-- 100GB+ disk space
-- Python 3.8+
-- Node.js 16+
-
-## Quick Start
-
-1. Clone the repository:
+## Quick start (Docker Compose)
+1) Clone and enter the repo
 ```bash
 git clone https://github.com/Maahir-AI-Robo/ROS2_BAGS-RECORDER-LIVE-STATUS-DASHBOARD.git
 cd ROS2_BAGS-RECORDER-LIVE-STATUS-DASHBOARD
 ```
-
-2. Copy and configure environment variables:
+2) Create your environment file
 ```bash
 cp .env.example .env
-# Edit .env with your settings
+# Edit .env with your secrets (e.g., CLOUD_AUTH_TOKEN)
 ```
+3) Review configuration
+- Recorder: [config/recorder_config.yaml](config/recorder_config.yaml)
+- Edge server: [config/edge_server_config.yaml](config/edge_server_config.yaml)
+- Dashboard: [config/dashboard_config.yaml](config/dashboard_config.yaml)
 
-3. Start services:
+4) Build and run
 ```bash
-docker-compose up -d
+docker compose up -d --build
 ```
+5) Open the dashboard
+- http://localhost:3000
 
-4. Access dashboard:
+## Local development (without Docker)
+- Edge server (FastAPI):
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -r edge_server/requirements.txt
+uvicorn edge_server.src.server:app --host 0.0.0.0 --port 8080
 ```
-http://localhost:3000
+- Dashboard (Vite):
+```bash
+cd dashboard
+npm install
+npm run start
 ```
+- Recorder and Sync Engine are plain Python modules; wire them into your ROS2 environment and processes as needed.
 
-## Documentation
+## Configuration
+- Environment variables (see [.env.example](.env.example))
+  - RECORDER_ENCRYPTION_KEY: Optional encryption key for at-rest data
+  - CLOUD_AUTH_TOKEN: Bearer token for cloud endpoint if used
+  - BACKEND_URL, WS_URL: Dashboard connection targets
+- YAML configs
+  - recorder_config.yaml: discovery, QoS, buffering, storage, session, telemetry
+  - edge_server_config.yaml: server, storage, queue, cloud, telemetry
+  - dashboard_config.yaml: backend URLs, UI, alerts, defaults
 
-See [docs/](docs/) directory for detailed documentation:
-- [Installation Guide](docs/installation.md)
-- [Configuration Reference](docs/configuration.md)
-- [API Documentation](docs/api.md)
-- [Developer Guide](docs/development.md)
+## Status and roadmap
+- This repository includes working service skeletons and reference flows for discovery, buffering, storage, indexing, queueing, and chunked uploads.
+- Replace placeholders (e.g., actual ROS2 subscription/recording loop, real upload endpoints, checksumming/verification) as you integrate with your systems.
+
+## Troubleshooting
+- Ports already in use: adjust mappings in docker-compose.yml
+- Permissions on data directories: ensure the host `./data/*` paths are writable
+- Dashboard blank page: ensure the edge server is running and BACKEND_URL/WS_URL are reachable from the browser
 
 ## License
-
-[MIT License](LICENSE)
+MIT (add a LICENSE file if required by your policies)
