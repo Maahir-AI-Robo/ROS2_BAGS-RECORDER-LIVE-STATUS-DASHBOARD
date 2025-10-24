@@ -1,0 +1,45 @@
+version: '3.8'
+services:
+  edge_server:
+    build:
+      context: .
+      dockerfile: Dockerfile.edge_server
+    container_name: ros2-edge-server
+    ports:
+      - "8080:8080"
+      - "8765:8765"
+      - "9091:9091"
+    volumes:
+      - ./data/storage:/data/storage
+      - ./data/index:/data/index
+      - ./data/queue:/data/queue
+      - ./config/edge_server_config.yaml:/app/config/edge_server_config.yaml:ro
+    environment:
+      - CLOUD_AUTH_TOKEN=${CLOUD_AUTH_TOKEN:-}
+    restart: unless-stopped
+  recorder:
+    build:
+      context: .
+      dockerfile: Dockerfile.recorder
+    container_name: ros2-recorder
+    network_mode: host
+    volumes:
+      - ./data/recordings:/data/recordings
+      - ./config/recorder_config.yaml:/app/config/recorder_config.yaml:ro
+    environment:
+      - ROS_DOMAIN_ID=0
+      - RECORDER_ENCRYPTION_KEY=${RECORDER_ENCRYPTION_KEY:-}
+    restart: unless-stopped
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    container_name: ros2-dashboard
+    ports:
+      - "3000:80"
+    environment:
+      - BACKEND_URL=http://localhost:8080
+      - WS_URL=ws://localhost:8765
+    restart: unless-stopped
+    depends_on:
+      - edge_server

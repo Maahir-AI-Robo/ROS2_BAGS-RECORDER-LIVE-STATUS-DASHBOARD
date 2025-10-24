@@ -1,0 +1,22 @@
+dashboard:
+  backend:
+    http_url: "http://localhost:8080"
+    ws_url: "ws://localhost:8765"
+    reconnect_interval_seconds: 5
+    max_reconnect_attempts: 10
+  ui:
+    refresh_rate_ms: 500
+    max_log_entries: 1000
+    theme: "dark"
+    timezone: "UTC"
+  alerts:
+    buffer_occupancy_threshold_percent: 80
+    upload_failure_threshold: 5
+    disk_usage_threshold_percent: 90
+    message_drop_rate_threshold_hz: 10
+    max_active_alerts: 100
+    auto_dismiss_after_seconds: 300
+  defaults:
+    session_list_limit: 50
+    metrics_history_duration_minutes: 60
+    log_filter_level: "INFO"

@@ -1,0 +1,48 @@
+recorder:
+  discovery:
+    mode: "auto"
+    auto_config:
+      exclude_patterns:
+        - "/rosout"
+        - "/parameter_events"
+        - "/diagnostics"
+      include_patterns:
+        - "/camera/*"
+        - "/lidar/*"
+        - "/sensors/*"
+      priority_topics:
+        - "/localization/pose"
+        - "/control/cmd_vel"
+      max_topics: 50
+  qos:
+    default:
+      reliability: "BEST_EFFORT"
+      durability: "VOLATILE"
+      history: "KEEP_LAST"
+      depth: 10
+  buffering:
+    per_topic_max_size_mb: 100
+    global_max_size_mb: 2048
+    flush_interval_seconds: 30
+    alignment_window_ms: 100
+    alert_threshold_percent: 80
+  storage:
+    local_path: "/data/recordings"
+    segment_max_size_mb: 50
+    segment_max_duration_seconds: 60
+    compression: "zstd"
+    compression_level: 3
+    encryption:
+      enabled: false
+      algorithm: "AES-256-GCM"
+      key_source: "env"
+      key_env_var: "RECORDER_ENCRYPTION_KEY"
+  session:
+    auto_start: false
+    session_name_template: "session_{timestamp}"
+    resume_on_restart: true
+  telemetry:
+    metrics_port: 9090
+    metrics_path: "/metrics"
+    event_bus_uri: "ws://localhost:8765/recorder/events"
+    log_level: "INFO"

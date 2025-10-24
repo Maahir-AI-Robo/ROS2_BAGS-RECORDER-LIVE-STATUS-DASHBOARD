@@ -1,0 +1,32 @@
+edge_server:
+  server:
+    host: "0.0.0.0"
+    http_port: 8080
+    ws_port: 8765
+    max_connections: 100
+    request_timeout_seconds: 300
+  storage:
+    data_path: "/data/storage"
+    index_db_path: "/data/index/index.db"
+    retention_policy:
+      local_max_age_days: 30
+      auto_cleanup: true
+      cleanup_interval_hours: 24
+  queue:
+    queue_path: "/data/queue/queue.json"
+    max_retry_attempts: 10
+    retry_backoff_base_seconds: 60
+    retry_backoff_max_seconds: 3600
+    retry_backoff_multiplier: 2
+    concurrent_uploads: 3
+    chunk_size_mb: 10
+  cloud:
+    enabled: true
+    endpoint: "https://cloud.example.com"
+    auth_token_env: "CLOUD_AUTH_TOKEN"
+    verify_ssl: true
+    timeout_seconds: 300
+  telemetry:
+    metrics_port: 9091
+    metrics_path: "/metrics"
+    log_level: "INFO"

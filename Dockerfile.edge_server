@@ -1,0 +1,15 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+COPY edge_server/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY edge_server/src ./src
+COPY config/edge_server_config.yaml ./config/
+
+ENV PYTHONUNBUFFERED=1
+
+EXPOSE 8080 8765 9091
+
+CMD ["uvicorn", "src.server:app", "--host", "0.0.0.0", "--port", "8080"]

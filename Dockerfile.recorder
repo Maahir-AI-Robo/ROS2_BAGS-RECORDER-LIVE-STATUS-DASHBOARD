@@ -1,0 +1,14 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+COPY recorder/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY recorder/src ./src
+COPY config/recorder_config.yaml ./config/
+
+ENV PYTHONUNBUFFERED=1
+
+# Replace with your entrypoint script as needed
+CMD ["python", "-c", "print('Recorder container ready')"]
